@@ -1,6 +1,6 @@
 // CalisBros Service Worker — offline-first agresivo
 // Desarrollado por Oscar Antonio Alvarez Collado
-const CACHE = 'calisbros-v5';
+const CACHE = 'calisbros-v6';
 const ASSETS = [
   './',
   './index.html',
