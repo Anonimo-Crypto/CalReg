@@ -184,6 +184,29 @@ const App = {
     return days >= 30;
   },
 
+
+  getExerciseOptions(e) {
+    if (!e) return { grips: [], variations: [] };
+    const grips = Array.isArray(e.grips) ? [...e.grips] : [];
+    const variations = Array.isArray(e.variations) ? [...e.variations] : [];
+    // Defaults for classic pull/push skills if catalog lacks them
+    const defaults = {
+      'pull-up': ['Prone', 'Supine', 'Neutral', 'False grip (prone)', 'False grip (supine)', 'False grip (neutral)', 'L-sit'],
+      'chin-up': ['Supine', 'Narrow', 'Wide'],
+      'muscle-up': ['Prone', 'Supine', 'False grip', 'False grip (prone)', 'False grip (supine)', 'Mixed grip'],
+      'dip': ['Parallel bars', 'Rings', 'Korean dips'],
+      'push-up': ['Standard', 'Diamond', 'Wide', 'Archer'],
+      'front-lever': ['Prone', 'Supine', 'Neutral', 'False grip'],
+      'back-lever': ['Prone', 'False grip'],
+      'human-flag': ['Prone', 'Supine', 'Neutral'],
+      'handstand': ['Floor', 'Parallettes', 'Wall-assisted'],
+      'free-handstand': ['Floor', 'Parallettes'],
+      'l-sit': ['Floor', 'Parallettes', 'Rings'],
+    };
+    if (!grips.length && defaults[e.id]) grips.push(...defaults[e.id]);
+    return { grips, variations };
+  },
+
   // ---------- HELPERS ----------
   escape(str) {
     const d = document.createElement('div');
@@ -264,33 +287,49 @@ const App = {
 
     (workout.exercises || []).forEach(ex => {
       const e = EXERCISES.find(x => x.id === ex.exerciseId);
-      if (!e) return;
-      const diff = e.difficulty || 3;
-      // MET aproximado: 3.5 (fácil) → 9 (élite)
-      const met = 3.5 + (diff / 10) * 5.5;
+      const diff = e ? (e.difficulty || 3) : 4;
+      const type = e ? e.type : 'reps';
+      // MET 3.5 (fácil) → 9.5 (élite). Variantes avanzadas suman un poco más
+      let met = 3.5 + (diff / 10) * 6;
+      if (ex.variant || ex.grip) met += 0.4;
 
       (ex.sets || []).forEach(s => {
+        const val = Number(s.value) || 0;
         let minutes;
-        if (e.type === 'hold') {
-          minutes = (s.value || 0) / 60; // segundos → minutos
+        if (type === 'hold') {
+          minutes = Math.abs(val) / 60;
         } else {
-          // ~2.5 seg por rep + transición
-          minutes = ((s.value || 0) * 2.5) / 60;
+          // ~2.5 s por rep + transición
+          minutes = (val * 2.5) / 60;
         }
         totalMETMinutes += met * minutes;
       });
     });
 
-    // kcal ≈ MET × peso(kg) × horas
-    const hours = totalMETMinutes / 60;
-    let kcal = metHoursToKcal(totalMETMinutes, weight);
+    // Mínimo por duración de sesión (si hay reloj)
+    if (workout.startedAt) {
+      const durMin = Math.max(0, (Date.now() - workout.startedAt) / 60000);
+      const floor = Math.min(durMin, 180) * 3.5; // MET bajo de estar activo
+      totalMETMinutes = Math.max(totalMETMinutes, floor * 0.15);
+    }
+    if (workout.durationSeconds) {
+      const durMin = workout.durationSeconds / 60;
+      totalMETMinutes = Math.max(totalMETMinutes, Math.min(durMin, 180) * 3.5 * 0.15);
+    }
 
-    // Ajuste ligero por sexo/edad (mujeres ~10% menos BMR relativo en ejercicios, edad reduce ligeramente)
+    let kcal = metHoursToKcal(totalMETMinutes, weight);
     if (user.sex === 'femenino') kcal *= 0.92;
     if (user.age && user.age > 40) kcal *= 0.95;
     if (user.age && user.age < 18) kcal *= 1.05;
 
-    return Math.max(0, Math.round(kcal));
+    // 1 decimal
+    return Math.max(0, Math.round(kcal * 10) / 10);
+  },
+
+  formatKcal(n) {
+    if (n == null || isNaN(n)) return '0';
+    const x = Number(n);
+    return (Math.round(x * 10) / 10).toFixed(1);
   },
 
   // ---------- ONBOARDING ----------
@@ -354,6 +393,14 @@ const App = {
 
             <button type="submit" class="btn btn-primary btn-full btn-lg">Comenzar</button>
           </form>
+
+          <div class="onboard-import">
+            <p class="muted small">¿Ya tienes un backup de CalisBros?</p>
+            <label class="btn btn-outline btn-full file-btn">
+              Importar datos existentes
+              <input type="file" accept="application/json,.json" hidden onchange="App.importDataOnboarding(event)">
+            </label>
+          </div>
           <p class="signature">Oscar Antonio Alvarez Collado</p>
         </div>
       </div>
@@ -538,7 +585,7 @@ const App = {
                 <div class="list-item static">
                   <div>
                     <strong>${this.escape(w.name)}</strong>
-                    <div class="muted">${new Date(w.date).toLocaleDateString('es')}${w.calories ? ` · ~${w.calories} kcal` : ''} · ${w.exercises.length} ej.</div>
+                    <div class="muted">${new Date(w.date).toLocaleDateString('es')}${w.calories ? ` · ~${this.formatKcal(w.calories)} kcal` : ''} · ${w.exercises.length} ej.</div>
                   </div>
                 </div>
               `).join('')}
@@ -653,7 +700,7 @@ const App = {
             <span class="muted small">Tiempo de sesión</span>
           </div>
           <div class="kcal-live">
-            <span class="kcal-num">~${liveKcal}</span>
+            <span class="kcal-num">~${this.formatKcal(liveKcal)}</span>
             <span class="kcal-lbl">kcal estimadas</span>
           </div>
         </div>
@@ -665,7 +712,7 @@ const App = {
             return `
               <div class="ex-block">
                 <div class="ex-block-head">
-                  <strong>${e.technicalName || e.name}</strong>
+                  <strong>${e.technicalName || e.name}${ex.variant ? ' · ' + this.escape(ex.variant) : ''}</strong>
                   <span class="tag">${CATEGORIES[e.category]?.name || ''}</span>
                 </div>
                 <div class="sets-row">
@@ -749,8 +796,55 @@ const App = {
   },
 
   addExercise(id) {
+    document.getElementById('add-modal')?.remove();
+    document.getElementById('ex-modal')?.remove();
+    const e = EXERCISES.find(x => x.id === id);
+    const { grips, variations } = this.getExerciseOptions(e);
+    const options = [...grips, ...variations.filter(v => !grips.includes(v))];
+    if (options.length) {
+      this.openVariantPicker(id, options);
+      return;
+    }
+    this.commitAddExercise(id, null);
+  },
+
+  openVariantPicker(id, options) {
+    const e = EXERCISES.find(x => x.id === id);
+    document.getElementById('variant-modal')?.remove();
+    const modal = document.createElement('div');
+    modal.className = 'modal-bg';
+    modal.id = 'variant-modal';
+    modal.innerHTML = `
+      <div class="modal">
+        <div class="modal-head">
+          <h3>${this.escape(e?.technicalName || e?.name || id)}</h3>
+          <button class="icon-btn" onclick="document.getElementById('variant-modal').remove()">✕</button>
+        </div>
+        <div class="modal-body">
+          <p class="muted small mb">Elige agarre o variante (o añade sin variante).</p>
+          <div class="add-list">
+            <button class="add-item" onclick="App.commitAddExercise('${id}', null)">
+              <strong>Sin variante / estándar</strong>
+            </button>
+            ${options.map(v => `
+              <button class="add-item" onclick="App.commitAddExercise('${id}', '${String(v).replace(/'/g, "\\'")}')">
+                <strong>${this.escape(v)}</strong>
+              </button>
+            `).join('')}
+          </div>
+        </div>
+      </div>`;
+    document.body.appendChild(modal);
+  },
+
+  commitAddExercise(id, variant) {
     if (!this.currentWorkout) this.startFreeWorkout();
-    this.currentWorkout.exercises.push({ exerciseId: id, sets: [] });
+    this.currentWorkout.exercises.push({
+      exerciseId: id,
+      variant: variant || null,
+      sets: []
+    });
+    document.getElementById('variant-modal')?.remove();
     document.getElementById('add-modal')?.remove();
     this.render();
   },
@@ -789,39 +883,40 @@ const App = {
 
     this.restTimer = setInterval(() => {
       this.restSecondsLeft--;
-      if (this.restSecondsLeft <= 0) {
-        this.restSecondsLeft = 0;
-        this.updateRestCircle();
-        if (!this.restAlarmPlayed) {
-          this.restAlarmPlayed = true;
-          this.playAlarm();
-          const label = document.getElementById('rest-label');
-          if (label) label.textContent = '¡Tiempo!';
-          document.getElementById('rest-actions')?.classList.add('hidden');
-          document.getElementById('rest-close')?.classList.remove('hidden');
-        }
-        return;
-      }
       this.updateRestCircle();
+      if (this.restSecondsLeft <= 0) {
+        // Alarma al cruzar 0 y cada 3 s en negativo
+        if (!this.restAlarmPlayed || this.restSecondsLeft % 3 === 0) {
+          this.playAlarm();
+          this.restAlarmPlayed = true;
+        }
+        const label = document.getElementById('rest-label');
+        if (label) label.textContent = '¡Tiempo!';
+        document.getElementById('rest-actions')?.classList.add('hidden');
+        document.getElementById('rest-close')?.classList.remove('hidden');
+      }
     }, 1000);
   },
 
   updateRestCircle() {
     const el = document.getElementById('rest-time');
-    if (el) el.textContent = String(Math.max(0, this.restSecondsLeft));
+    if (el) {
+      const v = this.restSecondsLeft;
+      el.textContent = v < 0 ? String(v) : String(v);
+      el.classList.toggle('rest-overtime', v < 0);
+    }
     const circle = document.getElementById('rest-progress');
     if (circle && this.restTotal) {
       const C = 2 * Math.PI * 54;
-      const ratio = Math.max(0, this.restSecondsLeft) / this.restTotal;
+      const ratio = Math.max(0, Math.min(1, this.restSecondsLeft / this.restTotal));
       circle.style.strokeDashoffset = String(C * (1 - ratio));
     }
   },
 
   adjustRest(delta) {
-    if (this.restSecondsLeft <= 0 && this.restAlarmPlayed) return;
-    this.restSecondsLeft = Math.max(0, this.restSecondsLeft + delta);
-    this.restTotal = Math.max(this.restTotal, this.restSecondsLeft);
+    this.restSecondsLeft = this.restSecondsLeft + delta;
     if (this.restSecondsLeft > 0) {
+      this.restTotal = Math.max(this.restTotal || 0, this.restSecondsLeft);
       this.restAlarmPlayed = false;
       document.getElementById('rest-close')?.classList.add('hidden');
       document.getElementById('rest-actions')?.classList.remove('hidden');
@@ -870,7 +965,7 @@ const App = {
     this.currentWorkout = null;
     clearInterval(this.restTimer);
     this.clearSessionTimer();
-    await this.showAlert('Sesión guardada', `Calorías estimadas: ~${w.calories} kcal · Duración: ${this.formatDuration(w.durationSeconds)}`);
+    await this.showAlert('Sesión guardada', `Calorías estimadas: ~${this.formatKcal(w.calories)} kcal · Duración: ${this.formatDuration(w.durationSeconds)}`);
     this.setView('home');
   },
 
@@ -1051,7 +1146,11 @@ const App = {
     if (!id) { form.classList.add('hidden'); form.innerHTML = ''; return; }
 
     const e = EXERCISES.find(x => x.id === id);
+    if (!e) return;
     form.classList.remove('hidden');
+    const { grips, variations } = this.getExerciseOptions(e);
+    const options = [...grips, ...variations.filter(v => !grips.includes(v))];
+
     let html = '';
     if (e.type === 'reps') {
       html += `
@@ -1066,12 +1165,23 @@ const App = {
         <div class="field"><label>Segundos con técnica estricta</label>
           <input type="number" id="r-strict-hold" class="input" min="0" placeholder="Ej: 18"></div>`;
     }
-    if (e.variations?.length) {
-      html += `<div class="field"><label>Variaciones que dominas</label>
-        <div class="check-grid">${e.variations.map(v => `
-          <label class="check-item"><input type="checkbox" name="vars" value="${v}"> ${v}</label>
-        `).join('')}</div></div>`;
+
+    if (options.length) {
+      html += `
+        <div class="field">
+          <label>Rendimiento por variante / agarre</label>
+          <p class="muted small mb">Puedes poner reps o segundos independientes en cada una.</p>
+          <div class="var-inputs">
+            ${options.map((v, i) => `
+              <div class="var-input-row">
+                <span class="var-input-label">${this.escape(v)}</span>
+                <input type="number" min="0" class="input input-sm" data-var="${this.escape(v)}" id="r-var-${i}" placeholder="${e.type==='hold'?'seg':'reps'}">
+              </div>
+            `).join('')}
+          </div>
+        </div>`;
     }
+
     html += `<button class="btn btn-primary btn-full" onclick="App.calculateRange('${id}')">Calcular mi rango</button>`;
     form.innerHTML = html;
   },
@@ -1081,6 +1191,7 @@ const App = {
     const result = document.getElementById('range-result');
     let score = 0;
     let details = [];
+    const variantScores = [];
 
     if (e.type === 'reps') {
       const total = parseInt(document.getElementById('r-total')?.value) || 0;
@@ -1100,7 +1211,7 @@ const App = {
     } else {
       const hold = parseInt(document.getElementById('r-hold')?.value) || 0;
       const strictH = parseInt(document.getElementById('r-strict-hold')?.value) || 0;
-      details.push(`${hold}s hold total`, `${strictH}s técnica estricta`);
+      details.push(`${hold}s hold`, `${strictH}s estrictos`);
       if (e.rangeCriteria) {
         const c = e.rangeCriteria;
         if (strictH >= (c.elite?.hold||999) || hold >= (c.elite?.hold||999)) score = 9.5;
@@ -1113,16 +1224,26 @@ const App = {
       }
     }
 
-    const vars = [...document.querySelectorAll('input[name="vars"]:checked')].map(c => c.value);
-    if (vars.length) {
-      details.push(`Variaciones: ${vars.join(', ')}`);
-      score = Math.min(10, score + vars.length * 0.35);
-    }
+    // Per-variant independent values
+    document.querySelectorAll('[data-var]').forEach(inp => {
+      const val = parseInt(inp.value);
+      if (!val || val < 1) return;
+      const name = inp.getAttribute('data-var');
+      variantScores.push({ name, value: val });
+      details.push(`${name}: ${val}${e.type==='hold'?'s':' reps'}`);
+      // boost score slightly for each solid variant
+      score = Math.min(10, score + 0.25);
+    });
 
     const label = getDifficultyLabel(score);
     const ref = REFERENCE_AVERAGES[id];
     const caps = Storage.getCapabilities();
-    caps[id] = { score, label, details, vars, updated: new Date().toISOString() };
+    caps[id] = {
+      score, label, details,
+      vars: variantScores.map(v => v.name),
+      variantScores,
+      updated: new Date().toISOString()
+    };
     Storage.saveCapabilities(caps);
 
     result.classList.remove('hidden');
@@ -1140,7 +1261,7 @@ const App = {
 
   // ---------- PROGRESS ----------
   renderProgress(c, user) {
-    if (this.progressDetailId) {
+    if (this.progressDetailId != null) {
       this.renderProgressDetail(c, user);
       return;
     }
@@ -1149,7 +1270,7 @@ const App = {
     const totalKcal = workouts.reduce((s, w) => s + (w.calories || 0), 0);
     const totalTime = workouts.reduce((s, w) => s + (w.durationSeconds || 0), 0);
     const n = workouts.length || 0;
-    const avgKcal = n ? Math.round(totalKcal / n) : 0;
+    const avgKcal = n ? Math.round((totalKcal / n) * 10) / 10 : 0;
     const avgTime = n ? Math.round(totalTime / n) : 0;
 
     c.innerHTML = `
@@ -1163,9 +1284,9 @@ const App = {
         </div>
         <div class="stats-grid mb">
           <div class="stat-card"><span class="stat-val">${n}</span><span class="stat-lbl">Sesiones</span></div>
-          <div class="stat-card"><span class="stat-val">~${totalKcal}</span><span class="stat-lbl">kcal totales</span></div>
+          <div class="stat-card"><span class="stat-val">~${this.formatKcal(totalKcal)}</span><span class="stat-lbl">kcal totales</span></div>
           <div class="stat-card"><span class="stat-val">${this.formatDuration(avgTime)}</span><span class="stat-lbl">Tiempo promedio</span></div>
-          <div class="stat-card"><span class="stat-val">~${avgKcal}</span><span class="stat-lbl">kcal promedio</span></div>
+          <div class="stat-card"><span class="stat-val">~${this.formatKcal(avgKcal)}</span><span class="stat-lbl">kcal promedio</span></div>
         </div>
         <div class="section">
           <h3>Historial de sesiones</h3>
@@ -1175,7 +1296,7 @@ const App = {
               const fecha = d.toLocaleDateString('es');
               const dia = this.dayName(w.date);
               const tiempo = this.formatDuration(w.durationSeconds || 0);
-              const kcal = w.calories != null ? `~${w.calories} kcal` : '—';
+              const kcal = w.calories != null ? `~${this.formatKcal(w.calories)} kcal` : '—';
               return `
                 <button class="list-item session-item" onclick="App.openSessionDetail(${i})">
                   <div>
@@ -1223,7 +1344,7 @@ const App = {
           <div class="muted">${d.toLocaleString('es')} · ${this.dayName(w.date)}</div>
           <div class="detail-grid mt">
             <div><span class="muted">Duración</span><br><strong>${this.formatDuration(w.durationSeconds || 0)}</strong></div>
-            <div><span class="muted">Calorías</span><br><strong>~${w.calories || 0} kcal</strong></div>
+            <div><span class="muted">Calorías</span><br><strong>~${this.formatKcal(w.calories || 0)} kcal</strong></div>
             <div><span class="muted">Ejercicios</span><br><strong>${(w.exercises||[]).length}</strong></div>
           </div>
         </div>
@@ -1236,7 +1357,7 @@ const App = {
             return `
               <div class="ex-block">
                 <div class="ex-block-head">
-                  <strong>${this.escape(name)}</strong>
+                  <strong>${this.escape(name)}${ex.variant ? ' · ' + this.escape(ex.variant) : ''}</strong>
                   <span class="tag">${(ex.sets||[]).length} sets</span>
                 </div>
                 <div class="sets-row">
@@ -1398,6 +1519,25 @@ const App = {
             <span class="body-lbl">Peso</span>
             <span class="body-sub">${user.height ? user.height + ' cm' : ''}</span>
           </div>
+        </div>
+
+        <div class="section">
+          <div class="section-head">
+            <h3>Registro de peso y altura</h3>
+            <button class="btn btn-sm btn-primary" onclick="App.openPersonalData()">+ Registrar</button>
+          </div>
+          ${(user.bodyLog && user.bodyLog.length) ? `
+            <div class="list">
+              ${user.bodyLog.slice(0, 12).map(b => `
+                <div class="list-item static">
+                  <div>
+                    <strong>${b.weight != null ? b.weight + ' kg' : '—'} · ${b.height != null ? b.height + ' cm' : '—'}</strong>
+                    <div class="muted small">${new Date(b.date).toLocaleString('es')}</div>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          ` : '<p class="muted small">Aún no hay registros. Al guardar peso/altura en datos personales se crea el histórico.</p>'}
         </div>
 
         <div class="section">
@@ -1565,6 +1705,19 @@ const App = {
     user.fatherHeight = parseFloat(document.getElementById('pd-father').value) || null;
     user.motherHeight = parseFloat(document.getElementById('pd-mother').value) || null;
     user.lastBodyUpdate = new Date().toISOString();
+    // Registro histórico de peso/altura (permite repetir valores)
+    if (user.weight != null || user.height != null) {
+      user.bodyLog = Array.isArray(user.bodyLog) ? user.bodyLog : [];
+      const last = user.bodyLog[0];
+      const entry = {
+        date: new Date().toISOString(),
+        weight: user.weight,
+        height: user.height
+      };
+      // Siempre registra al guardar desde el modal (histórico flexible)
+      user.bodyLog.unshift(entry);
+      if (user.bodyLog.length > 100) user.bodyLog.length = 100;
+    }
     Storage.saveUser(user);
     document.getElementById('personal-modal')?.remove();
     this.showToast('Datos personales guardados');

@@ -1,7 +1,5 @@
-// CalisBros - Calisthenics technical catalog (v5.3)
-// Sources: FitDevotion, White Coat Trainer, Gymnase Tips, Wikipedia, Calisthenics Hub
+// CalisBros - Calisthenics technical catalog (v5.4)
 // Developed by Oscar Antonio Alvarez Collado
-// Exercise names: English technical names
 
 const DIFFICULTY_LABELS = [
   {
@@ -378,7 +376,10 @@ const EXERCISES = [
     ],
     "formTips": "No encojas hombros. Pecho ligeramente adelante. Rango completo controlado.",
     "recommendedLevel": "intermedio",
-    "grips": null,
+    "grips": [
+      "Parallel bars",
+      "Rings"
+    ],
     "variations": null,
     "rangeCriteria": {
       "type": "reps",
@@ -1037,7 +1038,9 @@ const EXERCISES = [
     "formTips": "Agarre supino. Evita el balanceo. Rango completo.",
     "recommendedLevel": "intermedio",
     "grips": [
-      "Supino"
+      "Supine",
+      "Narrow",
+      "Wide"
     ],
     "variations": null,
     "rangeCriteria": {
@@ -1123,9 +1126,13 @@ const EXERCISES = [
     "formTips": "Escápulas activas al iniciar. Barbilla por encima de la barra. Baja completo.",
     "recommendedLevel": "intermedio",
     "grips": [
-      "Prono",
-      "Ancho",
-      "Estrecho"
+      "Prone",
+      "Supine",
+      "Neutral",
+      "False grip (prone)",
+      "False grip (supine)",
+      "False grip (neutral)",
+      "L-sit"
     ],
     "variations": null,
     "rangeCriteria": {
@@ -1561,13 +1568,13 @@ const EXERCISES = [
     "technicalName": "Heel Walk",
     "category": "piernas",
     "difficulty": 1.5,
-    "type": "reps",
+    "type": "hold",
     "muscles": [
       "Tibialis anterior",
       "Ankles",
       "Calves"
     ],
-    "description": "Walk on your heels with toes lifted. Strengthens the tibialis anterior and improves ankle control and lower-leg balance.",
+    "description": "Walk on your heels with toes lifted for time. Strengthens the tibialis anterior and improves ankle control.",
     "progressions": [
       {
         "name": "Heel Raise Hold",
@@ -1586,27 +1593,23 @@ const EXERCISES = [
     "equipment": [
       "suelo"
     ],
-    "formTips": "Toes pointed up. Short controlled steps. Upright torso. Do not let the toes drop.",
+    "formTips": "Toes up. Short controlled steps. Upright torso. Track total seconds of continuous walking.",
     "recommendedLevel": "principiante",
     "grips": null,
     "variations": null,
     "rangeCriteria": {
-      "type": "reps",
+      "type": "hold",
       "basico": {
-        "total": 15,
-        "strict": 10
+        "hold": 20
       },
       "intermedio": {
-        "total": 30,
-        "strict": 25
+        "hold": 40
       },
       "avanzado": {
-        "total": 50,
-        "strict": 40
+        "hold": 60
       },
       "elite": {
-        "total": 80,
-        "strict": 60
+        "hold": 90
       }
     }
   },
@@ -2732,7 +2735,11 @@ const EXERCISES = [
     ],
     "formTips": "Hombros deprimidos. Piernas rectas y juntas. Empuja fuerte el suelo/paralelas.",
     "recommendedLevel": "intermedio",
-    "grips": null,
+    "grips": [
+      "Floor",
+      "Parallettes",
+      "Rings"
+    ],
     "variations": null,
     "rangeCriteria": {
       "type": "hold",
@@ -3422,7 +3429,11 @@ const EXERCISES = [
     ],
     "formTips": "Empuja el suelo. Mira entre las manos. Costillas adentro. Glúteos firmes.",
     "recommendedLevel": "avanzado",
-    "grips": null,
+    "grips": [
+      "Floor",
+      "Parallettes",
+      "Wall-assisted"
+    ],
     "variations": null,
     "rangeCriteria": {
       "type": "hold",
@@ -3535,7 +3546,7 @@ const EXERCISES = [
     "formTips": "Hombros en extensión cómoda. Cuerpo rígido. No fuerces si hay pinchazo.",
     "recommendedLevel": "avanzado",
     "grips": [
-      "Prono",
+      "Prone",
       "False grip"
     ],
     "variations": [
@@ -3596,7 +3607,10 @@ const EXERCISES = [
     ],
     "formTips": "Push the floor away. Look between the hands. Ribs in, glutes tight. Small finger corrections, not large hip swings.",
     "recommendedLevel": "avanzado",
-    "grips": null,
+    "grips": [
+      "Floor",
+      "Parallettes"
+    ],
     "variations": null,
     "rangeCriteria": {
       "type": "hold",
@@ -3730,9 +3744,11 @@ const EXERCISES = [
     "formTips": "Tirón explosivo + transición rápida. Entrena false grip y dips por separado.",
     "recommendedLevel": "avanzado",
     "grips": [
-      "Prono",
-      "Supino",
+      "Prone",
+      "Supine",
       "False grip",
+      "False grip (prone)",
+      "False grip (supine)",
       "Mixed grip"
     ],
     "variations": [
@@ -3942,10 +3958,10 @@ const EXERCISES = [
     "formTips": "Cuerpo recto como una tabla. Hombros empaquetados. No dejes caer la cadera.",
     "recommendedLevel": "avanzado",
     "grips": [
-      "Supinado",
-      "Neutro",
-      "False grip",
-      "Prono (plane)"
+      "Prone",
+      "Supine",
+      "Neutral",
+      "False grip"
     ],
     "variations": [
       "Supinated grip",
@@ -4064,9 +4080,9 @@ const EXERCISES = [
     "formTips": "Empuje del brazo de abajo + tirón del de arriba. Cadera alineada.",
     "recommendedLevel": "avanzado",
     "grips": [
-      "Prono",
-      "Supino",
-      "Neutro"
+      "Prone",
+      "Supine",
+      "Neutral"
     ],
     "variations": [
       "Prone grip",
