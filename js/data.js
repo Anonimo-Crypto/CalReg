@@ -1,4 +1,4 @@
-// CalisBros - Calisthenics technical catalog (v5.4)
+// CalReg - Calisthenics technical catalog (v5.5)
 // Developed by Oscar Antonio Alvarez Collado
 
 const DIFFICULTY_LABELS = [
@@ -277,12 +277,15 @@ const EXERCISES = [
       }
     ],
     "equipment": [
-      "suelo"
+      "suelo",
+      "paralelas"
     ],
     "formTips": "Cuerpo en línea recta. Codos ~45°. No dejes caer la cadera ni arquees la lumbar.",
     "recommendedLevel": "principiante",
     "grips": null,
-    "variations": null,
+    "variations": [
+      "Parallettes"
+    ],
     "rangeCriteria": {
       "type": "reps",
       "basico": {
@@ -380,7 +383,9 @@ const EXERCISES = [
       "Parallel bars",
       "Rings"
     ],
-    "variations": null,
+    "variations": [
+      "Parallettes"
+    ],
     "rangeCriteria": {
       "type": "reps",
       "basico": {
@@ -595,12 +600,15 @@ const EXERCISES = [
       }
     ],
     "equipment": [
-      "suelo"
+      "suelo",
+      "paralelas"
     ],
     "formTips": "Cadera alta, cabeza hacia el suelo entre las manos. Empuje vertical.",
     "recommendedLevel": "intermedio",
     "grips": null,
-    "variations": null,
+    "variations": [
+      "Parallettes"
+    ],
     "rangeCriteria": {
       "type": "reps",
       "basico": {
@@ -650,12 +658,15 @@ const EXERCISES = [
     ],
     "equipment": [
       "suelo",
-      "banco"
+      "banco",
+      "paralelas"
     ],
     "formTips": "Pies elevados. Acerca el ángulo al del HSPU sin arquear la lumbar.",
     "recommendedLevel": "intermedio",
     "grips": null,
-    "variations": null,
+    "variations": [
+      "Parallettes"
+    ],
     "rangeCriteria": null
   },
   {
@@ -782,12 +793,15 @@ const EXERCISES = [
     ],
     "equipment": [
       "suelo",
-      "pared"
+      "pared",
+      "paralelas"
     ],
     "formTips": "Alineación de handstand antes de flexionar. Baja con control hacia el suelo.",
     "recommendedLevel": "avanzado",
     "grips": null,
-    "variations": null,
+    "variations": [
+      "Parallettes"
+    ],
     "rangeCriteria": {
       "type": "reps",
       "basico": {
@@ -2821,7 +2835,9 @@ const EXERCISES = [
     "formTips": "Compresión máxima. Piernas elevadas por encima de horizontal.",
     "recommendedLevel": "avanzado",
     "grips": null,
-    "variations": null,
+    "variations": [
+      "Parallettes"
+    ],
     "rangeCriteria": {
       "type": "hold",
       "basico": {
@@ -3072,12 +3088,15 @@ const EXERCISES = [
       }
     ],
     "equipment": [
-      "pared"
+      "pared",
+      "paralelas"
     ],
     "formTips": "Alineación vertical. No arquees la lumbar contra la pared.",
     "recommendedLevel": "intermedio",
     "grips": null,
-    "variations": null,
+    "variations": [
+      "Parallettes"
+    ],
     "rangeCriteria": {
       "type": "hold",
       "basico": {
@@ -3152,12 +3171,15 @@ const EXERCISES = [
       }
     ],
     "equipment": [
-      "suelo"
+      "suelo",
+      "paralelas"
     ],
     "formTips": "Manos a la altura de la cadera. Lean progresivo. Pies juntos.",
     "recommendedLevel": "intermedio",
     "grips": null,
-    "variations": null,
+    "variations": [
+      "Parallettes"
+    ],
     "rangeCriteria": {
       "type": "hold",
       "basico": {
@@ -3237,7 +3259,9 @@ const EXERCISES = [
     "formTips": "Codos en el abdomen. Cuerpo horizontal. Mirada al suelo.",
     "recommendedLevel": "intermedio",
     "grips": null,
-    "variations": null,
+    "variations": [
+      "Parallettes"
+    ],
     "rangeCriteria": {
       "type": "hold",
       "basico": {
@@ -3283,12 +3307,15 @@ const EXERCISES = [
       }
     ],
     "equipment": [
-      "suelo"
+      "suelo",
+      "paralelas"
     ],
     "formTips": "Hombros por delante de las muñecas. Cuerpo rígido.",
     "recommendedLevel": "intermedio",
     "grips": null,
-    "variations": null,
+    "variations": [
+      "Parallettes"
+    ],
     "rangeCriteria": {
       "type": "hold",
       "basico": {
@@ -3425,7 +3452,8 @@ const EXERCISES = [
     ],
     "equipment": [
       "suelo",
-      "pared"
+      "pared",
+      "paralelas"
     ],
     "formTips": "Empuja el suelo. Mira entre las manos. Costillas adentro. Glúteos firmes.",
     "recommendedLevel": "avanzado",
@@ -3486,7 +3514,9 @@ const EXERCISES = [
     "formTips": "Rodillas al pecho. Protrusión escapular. Codos bloqueados.",
     "recommendedLevel": "avanzado",
     "grips": null,
-    "variations": null,
+    "variations": [
+      "Parallettes"
+    ],
     "rangeCriteria": {
       "type": "hold",
       "basico": {
@@ -3603,7 +3633,8 @@ const EXERCISES = [
       }
     ],
     "equipment": [
-      "suelo"
+      "suelo",
+      "paralelas"
     ],
     "formTips": "Push the floor away. Look between the hands. Ribs in, glutes tight. Small finger corrections, not large hip swings.",
     "recommendedLevel": "avanzado",
@@ -3663,7 +3694,9 @@ const EXERCISES = [
     "formTips": "Cadera más abierta que en tuck. Rodillas atrás. Protrusión escapular y lean fuerte.",
     "recommendedLevel": "avanzado",
     "grips": null,
-    "variations": null,
+    "variations": [
+      "Parallettes"
+    ],
     "rangeCriteria": {
       "type": "hold",
       "basico": {
@@ -3899,12 +3932,15 @@ const EXERCISES = [
     ],
     "equipment": [
       "suelo",
-      "pared"
+      "pared",
+      "paralelas"
     ],
     "formTips": "Compresión fuerte. Subida lenta sin salto.",
     "recommendedLevel": "avanzado",
     "grips": null,
-    "variations": null,
+    "variations": [
+      "Parallettes"
+    ],
     "rangeCriteria": null
   },
   {
@@ -4020,7 +4056,9 @@ const EXERCISES = [
     "formTips": "Piernas abiertas y rectas. Cuerpo horizontal. Empuje activo de hombros. No dejes caer la cadera.",
     "recommendedLevel": "avanzado",
     "grips": null,
-    "variations": null,
+    "variations": [
+      "Parallettes"
+    ],
     "rangeCriteria": {
       "type": "hold",
       "basico": {
@@ -4141,7 +4179,9 @@ const EXERCISES = [
     "formTips": "Mantén la línea de planche al flexionar. Rango controlado.",
     "recommendedLevel": "avanzado",
     "grips": null,
-    "variations": null,
+    "variations": [
+      "Parallettes"
+    ],
     "rangeCriteria": null
   },
   {
@@ -4188,7 +4228,9 @@ const EXERCISES = [
     "formTips": "Cuerpo horizontal. Escápulas protruidas. No dejes caer la cadera.",
     "recommendedLevel": "avanzado",
     "grips": null,
-    "variations": null,
+    "variations": [
+      "Parallettes"
+    ],
     "rangeCriteria": {
       "type": "hold",
       "basico": {
@@ -4302,7 +4344,9 @@ const EXERCISES = [
     "formTips": "Compresión máxima. Cadera por encima de los hombros. Empuje fuerte en extensión de hombro. Progresión lenta.",
     "recommendedLevel": "avanzado",
     "grips": null,
-    "variations": null,
+    "variations": [
+      "Parallettes"
+    ],
     "rangeCriteria": {
       "type": "hold",
       "basico": {
@@ -4462,7 +4506,9 @@ const EXERCISES = [
     "formTips": "Cuerpo horizontal en soporte con brazos abiertos. Muy exigente para hombros y pectoral. Progresa con bandas.",
     "recommendedLevel": "avanzado",
     "grips": null,
-    "variations": null,
+    "variations": [
+      "Parallettes"
+    ],
     "rangeCriteria": {
       "type": "hold",
       "basico": {
@@ -4515,7 +4561,9 @@ const EXERCISES = [
     "formTips": "Planche con brazos abiertos en anillas. Lean extremo y protrusión. Solo con base sólida de planche.",
     "recommendedLevel": "avanzado",
     "grips": null,
-    "variations": null,
+    "variations": [
+      "Parallettes"
+    ],
     "rangeCriteria": {
       "type": "hold",
       "basico": {

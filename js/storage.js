@@ -1,4 +1,4 @@
-// CalisBros - Almacenamiento
+// CalReg - Almacenamiento
 // Oscar Antonio Alvarez Collado
 
 const Storage = {
@@ -52,13 +52,16 @@ const Storage = {
   getSettings() {
     try {
       const d = localStorage.getItem(this.KEYS.SETTINGS);
-      return d ? JSON.parse(d) : {
+      const parsed = d ? JSON.parse(d) : {};
+      return {
         restSeconds: 90,
+        restMode: 'manual',
         theme: 'dark',
-        accent: '#f97316'
+        accent: '#f97316',
+        ...parsed
       };
     } catch {
-      return { restSeconds: 90, theme: 'dark', accent: '#f97316' };
+      return { restSeconds: 90, restMode: 'manual', theme: 'dark', accent: '#f97316' };
     }
   },
 

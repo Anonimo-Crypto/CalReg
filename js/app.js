@@ -1,4 +1,4 @@
-// CalisBros - App principal (uso personal)
+// CalReg - App principal (uso personal)
 // Desarrollado por Oscar Antonio Alvarez Collado
 
 const App = {
@@ -7,6 +7,10 @@ const App = {
   restTimer: null,
   restSecondsLeft: 0,
   sessionTimer: null,
+  lastSetAt: null,
+  holdClock: null,
+  holdSeconds: 0,
+  holdIdx: null,
   restAlarmPlayed: false,
   progressDetailId: null,
 
@@ -22,22 +26,22 @@ const App = {
   },
 
   showOfflineBannerIfNeeded() {
-    if (localStorage.getItem('calisbros_offline_ready')) return;
+    if (localStorage.getItem('calreg_offline_ready')) return;
     // Mark after SW claims or after short delay
     setTimeout(() => {
-      if (localStorage.getItem('calisbros_offline_ready')) return;
+      if (localStorage.getItem('calreg_offline_ready')) return;
       const bar = document.createElement('div');
       bar.id = 'offline-banner';
       bar.className = 'offline-banner';
       bar.innerHTML = `
         <div class="offline-banner-inner">
           <strong>Listo sin conexión</strong>
-          <p>CalisBros se ha descargado en este dispositivo. Solo necesitabas Internet la primera vez.</p>
+          <p>CalReg se ha descargado en este dispositivo. Solo necesitabas Internet la primera vez.</p>
           <button class="btn btn-primary btn-sm" id="offline-ok">Entendido</button>
         </div>`;
       document.body.appendChild(bar);
       bar.querySelector('#offline-ok').onclick = () => {
-        localStorage.setItem('calisbros_offline_ready', '1');
+        localStorage.setItem('calreg_offline_ready', '1');
         bar.remove();
       };
     }, 1200);
@@ -109,12 +113,20 @@ const App = {
     });
   },
 
-  playAlarm() {
+  stopAlarm() {
     try {
       if (this._alarmAudio) {
         this._alarmAudio.pause();
         this._alarmAudio.currentTime = 0;
+        this._alarmAudio.src = '';
+        this._alarmAudio = null;
       }
+    } catch (_) {}
+  },
+
+  playAlarm() {
+    try {
+      this.stopAlarm();
       const audio = new Audio('./audio/alarm.mp3');
       audio.preload = 'auto';
       audio.volume = 1;
@@ -194,16 +206,36 @@ const App = {
       'pull-up': ['Prone', 'Supine', 'Neutral', 'False grip (prone)', 'False grip (supine)', 'False grip (neutral)', 'L-sit'],
       'chin-up': ['Supine', 'Narrow', 'Wide'],
       'muscle-up': ['Prone', 'Supine', 'False grip', 'False grip (prone)', 'False grip (supine)', 'Mixed grip'],
-      'dip': ['Parallel bars', 'Rings', 'Korean dips'],
-      'push-up': ['Standard', 'Diamond', 'Wide', 'Archer'],
+      'dip': ['Parallel bars', 'Parallettes', 'Rings', 'Korean dips'],
+      'push-up': ['Standard', 'Diamond', 'Wide', 'Archer', 'Parallettes'],
+      'pike-push-up': ['Floor', 'Parallettes'],
+      'elevated-pike-push-up': ['Floor', 'Parallettes'],
       'front-lever': ['Prone', 'Supine', 'Neutral', 'False grip'],
       'back-lever': ['Prone', 'False grip'],
       'human-flag': ['Prone', 'Supine', 'Neutral'],
       'handstand': ['Floor', 'Parallettes', 'Wall-assisted'],
       'free-handstand': ['Floor', 'Parallettes'],
+      'wall-handstand': ['Wall', 'Parallettes + wall'],
+      'press-to-handstand': ['Floor', 'Parallettes'],
       'l-sit': ['Floor', 'Parallettes', 'Rings'],
+      'v-sit': ['Floor', 'Parallettes', 'Rings'],
+      'planche': ['Floor', 'Parallettes'],
+      'tuck-planche': ['Floor', 'Parallettes'],
+      'advanced-tuck-planche': ['Floor', 'Parallettes'],
+      'straddle-planche': ['Floor', 'Parallettes'],
+      'planche-lean': ['Floor', 'Parallettes'],
+      'pseudo-planche-lean': ['Floor', 'Parallettes'],
+      'planche-push-up': ['Floor', 'Parallettes'],
+      'elbow-lever': ['Floor', 'Parallettes'],
+      'manna': ['Floor', 'Parallettes'],
     };
     if (!grips.length && defaults[e.id]) grips.push(...defaults[e.id]);
+    const eq = e.equipment || [];
+    if (eq.includes('paralelas') || defaults[e.id]?.includes('Parallettes')) {
+      if (!grips.includes('Parallettes') && !variations.includes('Parallettes')) {
+        variations.push('Parallettes');
+      }
+    }
     return { grips, variations };
   },
 
@@ -339,9 +371,9 @@ const App = {
       <div class="onboarding">
         <div class="onboarding-inner">
           <div class="logo-wrap">
-            <img src="icons/logo.svg" alt="CalisBros" class="logo-img">
+            <img src="icons/logo.svg" alt="CalReg" class="logo-img">
           </div>
-          <h1>CalisBros</h1>
+          <h1>CalReg</h1>
           <p class="tagline">Tu progreso de calistenia, medido y claro</p>
 
           <form id="onboard-form" class="onboard-form">
@@ -395,7 +427,7 @@ const App = {
           </form>
 
           <div class="onboard-import">
-            <p class="muted small">¿Ya tienes un backup de CalisBros?</p>
+            <p class="muted small">¿Ya tienes un backup de CalReg?</p>
             <label class="btn btn-outline btn-full file-btn">
               Importar datos existentes
               <input type="file" accept="application/json,.json" hidden onchange="App.importDataOnboarding(event)">
@@ -448,7 +480,7 @@ const App = {
       <header class="topbar">
         <div class="topbar-brand">
           <img src="icons/logo.svg" alt="" class="brand-icon">
-          <span>CalisBros</span>
+          <span>CalReg</span>
         </div>
         <div class="topbar-right">
           <button class="icon-btn" id="theme-toggle" title="Cambiar tema" aria-label="Tema">
@@ -713,15 +745,24 @@ const App = {
               <div class="ex-block">
                 <div class="ex-block-head">
                   <strong>${e.technicalName || e.name}${ex.variant ? ' · ' + this.escape(ex.variant) : ''}</strong>
-                  <span class="tag">${CATEGORIES[e.category]?.name || ''}</span>
+                  <div class="ex-head-actions">
+                    <span class="tag">${CATEGORIES[e.category]?.name || ''}</span>
+                    <button class="icon-btn danger-btn" title="Quitar ejercicio" onclick="App.removeExerciseFromSession(${idx})">✕</button>
+                  </div>
                 </div>
                 <div class="sets-row">
                   ${ex.sets.map((s, si) => `<span class="set-pill">S${si+1}: ${s.value}${e.type==='hold'?'s':''}${s.restAfter != null ? ' · desc. '+s.restAfter+'s' : ''}</span>`).join('')}
                 </div>
                 <div class="add-set-row">
-                  <input type="number" min="1" max="999" placeholder="${e.type==='hold'?'Segundos':'Reps'}" id="set-in-${idx}" class="input">
+                  <input type="number" min="1" max="9999" placeholder="${e.type==='hold'?'Segundos':'Reps'}" id="set-in-${idx}" class="input">
                   <button class="btn btn-primary btn-sm" onclick="App.addSet(${idx})">Añadir set</button>
                 </div>
+                ${e.type==='hold' ? `
+                  <div class="hold-row">
+                    <button class="btn btn-outline btn-sm" id="hold-btn-${idx}" onclick="App.toggleHoldClock(${idx})">${this.holdIdx===idx && this.holdClock ? 'Detener cronómetro' : 'Cronómetro'}</button>
+                    <span class="hold-live" id="hold-live-${idx}">${this.holdIdx===idx && this.holdClock ? this.formatDuration(this.holdSeconds) : ''}</span>
+                  </div>
+                ` : ''}
               </div>
             `;
           }).join('')}
@@ -853,10 +894,67 @@ const App = {
     const input = document.getElementById(`set-in-${idx}`);
     const val = parseInt(input?.value);
     if (!val || val < 1) return;
-    this.currentWorkout.exercises[idx].sets.push({ value: val, at: Date.now() });
+    const now = Date.now();
+    const setObj = { value: val, at: now };
+    const settings = Storage.getSettings();
+    if (settings.restMode === 'auto' && this.lastSetAt) {
+      setObj.restAfter = Math.max(0, Math.round((now - this.lastSetAt) / 1000));
+    }
+    this.currentWorkout.exercises[idx].sets.push(setObj);
     input.value = '';
-    this.startRest(idx, this.currentWorkout.exercises[idx].sets.length - 1);
+    this.stopHoldClock(true);
+    this.lastSetAt = now;
+    if (settings.restMode !== 'auto') {
+      this.startRest(idx, this.currentWorkout.exercises[idx].sets.length - 1);
+    } else if (setObj.restAfter != null) {
+      this.showToast('Descanso registrado: ' + setObj.restAfter + 's');
+    }
     this.render();
+  },
+
+  async removeExerciseFromSession(idx) {
+    const ok = await this.showConfirm('Quitar ejercicio', '¿Eliminar este ejercicio y sus sets de la sesión?');
+    if (!ok || !this.currentWorkout) return;
+    this.currentWorkout.exercises.splice(idx, 1);
+    this.render();
+  },
+
+  toggleHoldClock(idx) {
+    if (this.holdClock && this.holdIdx === idx) {
+      this.stopHoldClock(false);
+      return;
+    }
+    this.stopHoldClock(true);
+    this.holdIdx = idx;
+    this.holdSeconds = 0;
+    const live = document.getElementById('hold-live-' + idx);
+    const btn = document.getElementById('hold-btn-' + idx);
+    if (btn) btn.textContent = 'Detener cronómetro';
+    this.holdClock = setInterval(() => {
+      this.holdSeconds++;
+      const el = document.getElementById('hold-live-' + idx);
+      if (el) el.textContent = this.formatDuration(this.holdSeconds);
+    }, 1000);
+    if (live) live.textContent = this.formatDuration(0);
+  },
+
+  stopHoldClock(discard) {
+    if (this.holdClock) {
+      clearInterval(this.holdClock);
+      this.holdClock = null;
+    }
+    if (!discard && this.holdIdx != null && this.holdSeconds > 0) {
+      const input = document.getElementById('set-in-' + this.holdIdx);
+      if (input) input.value = String(this.holdSeconds);
+      this.showToast('Tiempo capturado: ' + this.holdSeconds + 's');
+    }
+    const idx = this.holdIdx;
+    this.holdIdx = null;
+    this.holdSeconds = 0;
+    const btn = document.getElementById('hold-btn-' + idx);
+    if (btn) btn.textContent = 'Cronómetro';
+    const live = document.getElementById('hold-live-' + idx);
+    if (live) live.textContent = '';
   },
 
   startRest(exIdx, setIdx) {
@@ -927,6 +1025,7 @@ const App = {
   },
 
   skipRest() {
+    this.stopAlarm();
     // record rest used on last set if possible
     const used = (this.restTotal || 0) - Math.max(0, this.restSecondsLeft);
     if (this.currentWorkout && this._restExIdx != null && this._restSetIdx != null) {
@@ -945,8 +1044,11 @@ const App = {
     const ok = await this.showConfirm('Cancelar sesión', '¿Cancelar la sesión actual? No se guardará.');
     if (!ok) return;
     this.currentWorkout = null;
+    this.stopAlarm();
+    this.stopHoldClock(true);
     clearInterval(this.restTimer);
     this.clearSessionTimer();
+    this.lastSetAt = null;
     this.render();
   },
 
@@ -963,8 +1065,11 @@ const App = {
     Storage.saveUser(user);
     Storage.addWorkout(w);
     this.currentWorkout = null;
+    this.stopAlarm();
+    this.stopHoldClock(true);
     clearInterval(this.restTimer);
     this.clearSessionTimer();
+    this.lastSetAt = null;
     await this.showAlert('Sesión guardada', `Calorías estimadas: ~${this.formatKcal(w.calories)} kcal · Duración: ${this.formatDuration(w.durationSeconds)}`);
     this.setView('home');
   },
@@ -1424,11 +1529,54 @@ const App = {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `calisbros-backup-${new Date().toISOString().slice(0,10)}.json`;
+    a.download = `calreg-backup-${new Date().toISOString().slice(0,10)}.json`;
     document.body.appendChild(a);
     a.click();
     a.remove();
     URL.revokeObjectURL(url);
+  },
+
+  importDataOnboarding(event) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async () => {
+      try {
+        const data = JSON.parse(reader.result);
+        if (!data || typeof data !== 'object') throw new Error('Archivo inválido');
+        const u = data.user || {};
+        // Rellena el formulario de inicio
+        const nameEl = document.getElementById('ob-name');
+        if (nameEl && u.name) nameEl.value = u.name;
+        if (u.level) {
+          const r = document.querySelector(`input[name="level"][value="${u.level}"]`);
+          if (r) r.checked = true;
+        }
+        if (Array.isArray(u.goals)) {
+          document.querySelectorAll('input[name="goals"]').forEach(c => {
+            c.checked = u.goals.includes(c.value);
+          });
+        }
+        const startEl = document.getElementById('ob-start');
+        if (startEl && u.startDate) startEl.value = u.startDate;
+
+        if (data.user) Storage.saveUser(data.user);
+        if (Array.isArray(data.workouts)) Storage.saveWorkouts(data.workouts);
+        if (data.capabilities) Storage.saveCapabilities(data.capabilities);
+        if (data.settings) Storage.saveSettings(data.settings);
+
+        this.showToast('Datos importados. Campos rellenados.');
+        // Si el backup trae perfil, entra directo
+        if (data.user && data.user.name) {
+          this.applyTheme();
+          this.init();
+        }
+      } catch (err) {
+        await this.showAlert('Error', 'No se pudo importar el archivo. Verifica que sea un backup de CalReg válido.');
+      }
+      event.target.value = '';
+    };
+    reader.readAsText(file);
   },
 
   importData(event) {
@@ -1452,7 +1600,7 @@ const App = {
         this.applyTheme();
         this.setView('home');
       } catch (err) {
-        await this.showAlert('Error', 'No se pudo importar el archivo. Verifica que sea un backup de CalisBros válido.');
+        await this.showAlert('Error', 'No se pudo importar el archivo. Verifica que sea un backup de CalReg válido.');
       }
       event.target.value = '';
     };
@@ -1462,7 +1610,7 @@ const App = {
   async deleteAllData() {
     const ok1 = await this.showConfirm(
       'Eliminar todos los datos',
-      '¿Eliminar TODOS los datos de CalisBros en este dispositivo? Esta acción no se puede deshacer.',
+      '¿Eliminar TODOS los datos de CalReg en este dispositivo? Esta acción no se puede deshacer.',
       'Eliminar', 'Cancelar'
     );
     if (!ok1) return;
@@ -1600,15 +1748,23 @@ const App = {
             </div>
           </div>
           <div class="field">
+            <label>Modo de descanso</label>
+            <div class="sex-pills" id="rest-mode-wrap">
+              <button type="button" class="sex-pill ${(s.restMode||'manual')==='manual'?'active':''}" onclick="App.setRestMode('manual')">Manual</button>
+              <button type="button" class="sex-pill ${s.restMode==='auto'?'active':''}" onclick="App.setRestMode('auto')">Automático</button>
+            </div>
+            <p class="muted small mt">${(s.restMode||'manual')==='auto' ? 'Registra el tiempo entre una serie y la siguiente, sin temporizador.' : 'Configuras el tiempo y aparece el temporizador circular.'}</p>
+          </div>
+          <div class="field ${(s.restMode||'manual')==='auto' ? 'hidden' : ''}">
             <label>Descanso por defecto (seg)</label>
-            <input type="number" id="set-rest" class="input" value="${s.restSeconds}" min="30" max="300">
+            <input type="number" id="set-rest" class="input" value="${s.restSeconds}" min="10" max="300">
             <button class="btn btn-sm btn-primary mt" onclick="App.saveRest()">Guardar</button>
           </div>
         </div>
 
         <div class="section about">
           <h3>Acerca de</h3>
-          <p>CalisBros es una herramienta personal de seguimiento de calistenia. Sin rankings sociales.</p>
+          <p>CalReg (Calisthenics Registration) es una herramienta personal de seguimiento de calistenia. Sin rankings sociales.</p>
           <p class="signature">Desarrollado por <strong>Oscar Antonio Alvarez Collado</strong></p>
           <button class="btn btn-outline btn-sm mt" onclick="App.deleteAllData()">Resetear datos</button>
         </div>
@@ -1858,9 +2014,18 @@ const App = {
 
   saveRest() {
     const s = Storage.getSettings();
-    s.restSeconds = parseInt(document.getElementById('set-rest').value) || 90;
+    const el = document.getElementById('set-rest');
+    if (el) s.restSeconds = parseInt(el.value) || 90;
     Storage.saveSettings(s);
     this.showToast('Descanso guardado');
+  },
+
+  setRestMode(mode) {
+    const s = Storage.getSettings();
+    s.restMode = mode === 'auto' ? 'auto' : 'manual';
+    Storage.saveSettings(s);
+    this.showToast(s.restMode === 'auto' ? 'Descanso automático' : 'Descanso manual');
+    this.render();
   }
 };
 
