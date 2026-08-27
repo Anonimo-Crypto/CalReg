@@ -1,6 +1,6 @@
-// CalisBros Service Worker — offline-first agresivo
+// CalReg Service Worker — offline-first agresivo
 // Desarrollado por Oscar Antonio Alvarez Collado
-const CACHE = 'calisbros-v6';
+const CACHE = 'calreg-v7';
 const ASSETS = [
   './',
   './index.html',

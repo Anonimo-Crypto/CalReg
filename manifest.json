@@ -1,6 +1,6 @@
 {
-  "name": "CalisBros — Calistenia personal",
-  "short_name": "CalisBros",
+  "name": "CalReg — Calisthenics Registration",
+  "short_name": "CalReg",
   "description": "Seguimiento personal de calistenia: progresiones, rangos y capacidades. Oscar Antonio Alvarez Collado.",
   "start_url": "./index.html",
   "display": "standalone",

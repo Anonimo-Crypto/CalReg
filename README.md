@@ -1,4 +1,4 @@
-# CalisBros — Calistenia personal
+# CalReg — Calisthenics Registration
 
 PWA / TWA de seguimiento **personal** de calistenia (solo peso corporal).
 
