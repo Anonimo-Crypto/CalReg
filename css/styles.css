@@ -1087,3 +1087,41 @@ html, body {
   font-size: 0.75rem;
   color: var(--text-muted);
 }
+
+.rest-time.rest-overtime { color: #ef4444; }
+.var-inputs { display: flex; flex-direction: column; gap: 8px; }
+.var-input-row {
+  display: grid;
+  grid-template-columns: 1fr 88px;
+  gap: 8px;
+  align-items: center;
+}
+.var-input-label { font-size: 0.88rem; color: var(--text); }
+.input-sm { padding: 8px 10px; font-size: 0.9rem; }
+.onboard-import {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border, #1e293b);
+  text-align: center;
+}
+.onboard-import .file-btn { margin-top: 8px; }
+
+.list { display: flex; flex-direction: column; gap: 10px; }
+.session-item {
+  margin-bottom: 10px;
+  gap: 8px;
+}
+.list-item + .list-item { margin-top: 0; }
+.ex-head-actions { display: flex; align-items: center; gap: 6px; }
+.danger-btn { color: #f87171; }
+.hold-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+}
+.hold-live {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  color: var(--accent);
+}
