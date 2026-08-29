@@ -16,6 +16,12 @@ const App = {
 
   init() {
     this.applyTheme();
+    const packed = localStorage.getItem('calreg_pack_ready');
+    const ver = (typeof CALREG_VERSION !== 'undefined' && CALREG_VERSION.version) || '1.0.0';
+    if (packed !== ver) {
+      this.showFirstDownload();
+      return;
+    }
     if (!Storage.getUser()) {
       this.showOnboarding();
       return;
@@ -30,6 +36,11 @@ const App = {
     // Mark after SW claims or after short delay
     setTimeout(() => {
       if (localStorage.getItem('calreg_offline_ready')) return;
+      // No interrumpir si el usuario ya tiene un modal abierto (evita bloquear taps)
+      if (document.querySelector('.modal-bg')) {
+        setTimeout(() => this.showOfflineBannerIfNeeded(), 800);
+        return;
+      }
       const bar = document.createElement('div');
       bar.id = 'offline-banner';
       bar.className = 'offline-banner';
@@ -45,6 +56,232 @@ const App = {
         bar.remove();
       };
     }, 1200);
+  },
+
+
+  packAssets() {
+    return [
+      { url: './index.html', name: 'index.html' },
+      { url: './css/styles.css', name: 'styles.css' },
+      { url: './js/version.js', name: 'version.js' },
+      { url: './js/data.js', name: 'data.js' },
+      { url: './js/storage.js', name: 'storage.js' },
+      { url: './js/app.js', name: 'app.js' },
+      { url: './manifest.json', name: 'manifest.json' },
+      { url: './icons/icon-192.png', name: 'icon-192.png' },
+      { url: './icons/icon-512.png', name: 'icon-512.png' },
+      { url: './icons/apple-touch-icon.png', name: 'apple-touch-icon.png' },
+      { url: './icons/logo.svg', name: 'logo.svg' },
+      { url: './icons/home.svg', name: 'home.svg' },
+      { url: './icons/train.svg', name: 'train.svg' },
+      { url: './icons/library.svg', name: 'library.svg' },
+      { url: './icons/range.svg', name: 'range.svg' },
+      { url: './icons/progress.svg', name: 'progress.svg' },
+      { url: './icons/profile.svg', name: 'profile.svg' },
+      { url: './icons/data.svg', name: 'data.svg' },
+      { url: './audio/alarm.mp3', name: 'alarm.mp3' }
+    ];
+  },
+
+  formatSpeed(bps) {
+    if (!bps || bps < 0) return '0 KB/s';
+    if (bps < 1024) return Math.round(bps) + ' B/s';
+    if (bps < 1024 * 1024) return (bps / 1024).toFixed(1) + ' KB/s';
+    return (bps / (1024 * 1024)).toFixed(2) + ' MB/s';
+  },
+
+  compareSemver(a, b) {
+    const pa = String(a || '0').split('.').map(n => parseInt(n, 10) || 0);
+    const pb = String(b || '0').split('.').map(n => parseInt(n, 10) || 0);
+    for (let i = 0; i < 3; i++) {
+      if ((pa[i] || 0) > (pb[i] || 0)) return 1;
+      if ((pa[i] || 0) < (pb[i] || 0)) return -1;
+    }
+    return 0;
+  },
+
+  parseVersionFile(text) {
+    const ver = (text.match(/version\s*:\s*['"]([^'"]+)['"]/) || [])[1];
+    const block = text.match(/notes\s*:\s*\[([\s\S]*?)\]/);
+    const notes = [];
+    if (block) {
+      const re = /['"]([^'"]+)['"]/g;
+      let m;
+      while ((m = re.exec(block[1]))) notes.push(m[1]);
+    }
+    return { version: ver || null, notes };
+  },
+
+  showFirstDownload() {
+    const app = document.getElementById('app');
+    const ver = (typeof CALREG_VERSION !== 'undefined' && CALREG_VERSION.version) || '1.0.0';
+    app.innerHTML = `
+      <div class="dl-screen">
+        <div class="dl-card">
+          <div class="dl-badge">Primera vez</div>
+          <h1>Descarga de datos</h1>
+          <p class="dl-copy">Al continuar se usarán <strong>datos móviles o Wi-Fi</strong> para descargar los archivos de CalReg (interfaz, catálogo y sonidos). Este proceso <strong>solo ocurre una vez</strong>; después podrás usar la app completamente sin conexión.</p>
+          <p class="dl-size">Tamaño aproximado: ~0,7 MB · v${this.escape(ver)}</p>
+          <div class="dl-credits">
+            <p>© CalReg — Calisthenics Registration</p>
+            <p>Desarrollado por Oscar Antonio Alvarez Collado</p>
+            <p>Todos los derechos reservados.</p>
+          </div>
+          <button class="btn btn-primary btn-full btn-lg dl-cta" id="dl-start">Descargar</button>
+        </div>
+      </div>`;
+    document.getElementById('dl-start').onclick = () => this.startPackDownload();
+  },
+
+  startPackDownload() {
+    const files = this.packAssets();
+    const app = document.getElementById('app');
+    app.innerHTML = `
+      <div class="dl-screen">
+        <div class="dl-card dl-card-progress">
+          <div class="dl-badge">Descargando</div>
+          <h1>Preparando CalReg offline</h1>
+          <div class="dl-bar-wrap">
+            <div class="dl-speed-chip" id="dl-speed">0 KB/s</div>
+            <div class="dl-bar-track">
+              <div class="dl-bar-fill" id="dl-bar"></div>
+            </div>
+            <div class="dl-bar-pct" id="dl-pct">0%</div>
+          </div>
+          <p class="muted small" id="dl-status">Iniciando…</p>
+          <div class="dl-files" id="dl-files">
+            ${files.map((f, i) => `
+              <div class="dl-file" data-i="${i}">
+                <span class="dl-file-name">${this.escape(f.name)}</span>
+                <span class="dl-ring wait" id="dl-ring-${i}">
+                  <svg viewBox="0 0 36 36" aria-hidden="true">
+                    <circle class="dl-ring-bg" cx="18" cy="18" r="14"></circle>
+                    <circle class="dl-ring-fg" cx="18" cy="18" r="14" id="dl-arc-${i}"></circle>
+                  </svg>
+                </span>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      </div>`;
+    this.runPackDownload(files);
+  },
+
+  async runPackDownload(files) {
+    const cacheName = 'calreg-v9';
+    let cache = null;
+    try { cache = await caches.open(cacheName); } catch (_) {}
+    const totalFiles = files.length;
+    let doneFiles = 0;
+    let bytesWindow = 0;
+    let lastTick = Date.now();
+
+    const setSpeed = () => {
+      const now = Date.now();
+      const dt = Math.max(1, now - lastTick) / 1000;
+      const el = document.getElementById('dl-speed');
+      if (el) el.textContent = this.formatSpeed(bytesWindow / dt);
+      bytesWindow = 0;
+      lastTick = now;
+    };
+    const speedIv = setInterval(setSpeed, 500);
+
+    const setTotal = () => {
+      const pct = Math.round((doneFiles / totalFiles) * 100);
+      const bar = document.getElementById('dl-bar');
+      const lab = document.getElementById('dl-pct');
+      if (bar) bar.style.width = pct + '%';
+      if (lab) lab.textContent = pct + '%';
+    };
+
+    for (let i = 0; i < files.length; i++) {
+      const f = files[i];
+      const ring = document.getElementById('dl-ring-' + i);
+      const arc = document.getElementById('dl-arc-' + i);
+      const st = document.getElementById('dl-status');
+      if (ring) { ring.classList.remove('wait', 'done'); ring.classList.add('active'); }
+      if (st) st.textContent = 'Descargando ' + f.name;
+      try {
+        const res = await fetch(f.url, { cache: 'reload' });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const reader = res.body && res.body.getReader ? res.body.getReader() : null;
+        const chunks = [];
+        if (reader) {
+          const len = Number(res.headers.get('content-length')) || 0;
+          let loaded = 0;
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            chunks.push(value);
+            loaded += value.length;
+            bytesWindow += value.length;
+            if (arc && len) {
+              const C = 2 * Math.PI * 14;
+              const ratio = Math.min(1, loaded / len);
+              arc.style.strokeDasharray = String(C);
+              arc.style.strokeDashoffset = String(C * (1 - ratio));
+            }
+          }
+          const blob = new Blob(chunks);
+          const built = new Response(blob, { headers: res.headers });
+          if (cache) await cache.put(f.url, built);
+        } else {
+          const blob = await res.blob();
+          bytesWindow += blob.size || 1;
+          if (cache) await cache.put(f.url, new Response(blob, { headers: res.headers }));
+        }
+      } catch (err) {
+        // Sigue con el siguiente; la app igual puede funcionar si el SW ya cacheó
+      }
+      if (ring) { ring.classList.remove('active', 'wait'); ring.classList.add('done'); }
+      if (arc) {
+        const C = 2 * Math.PI * 14;
+        arc.style.strokeDasharray = String(C);
+        arc.style.strokeDashoffset = '0';
+      }
+      doneFiles++;
+      setTotal();
+    }
+
+    clearInterval(speedIv);
+    const speed = document.getElementById('dl-speed');
+    if (speed) speed.textContent = 'OK';
+    const st = document.getElementById('dl-status');
+    if (st) st.textContent = 'Descarga completa. CalReg listo sin conexión.';
+    const ver = (typeof CALREG_VERSION !== 'undefined' && CALREG_VERSION.version) || '1.0.0';
+    localStorage.setItem('calreg_pack_ready', ver);
+    localStorage.setItem('calreg_offline_ready', '1');
+    setTimeout(() => this.init(), 700);
+  },
+
+  async checkAppVersion() {
+    const local = (typeof CALREG_VERSION !== 'undefined' && CALREG_VERSION.version) || '1.0.0';
+    this.showToast('Comprobando versión…');
+    try {
+      const res = await fetch('./js/version.js?t=' + Date.now(), { cache: 'no-store' });
+      if (!res.ok) throw new Error('sin red');
+      const text = await res.text();
+      const remote = this.parseVersionFile(text);
+      if (!remote.version) throw new Error('archivo inválido');
+      if (this.compareSemver(remote.version, local) <= 0) {
+        await this.showAlert('Versión actual', 'Ya tienes la última versión (v' + local + ').');
+        return;
+      }
+      const notes = (remote.notes && remote.notes.length)
+        ? remote.notes.map(n => '• ' + n).join('\n')
+        : 'Hay una versión nueva disponible.';
+      const ok = await this.showConfirm(
+        'Actualización v' + remote.version,
+        'Tu versión: v' + local + '\nNueva: v' + remote.version + '\n\nCambios de esta versión:\n' + notes,
+        'Actualizar',
+        'Cancelar'
+      );
+      if (!ok) return;
+      localStorage.removeItem('calreg_pack_ready');
+      this.showFirstDownload();
+    } catch (err) {
+      await this.showAlert('Sin conexión', 'No se pudo comprobar la versión. Esta opción usa datos / Wi-Fi.');
+    }
   },
 
   applyTheme() {
@@ -651,7 +888,7 @@ const App = {
               <button class="list-item" onclick="App.startPreset('${r.id}')">
                 <div>
                   <strong>${r.name}</strong>
-                  <div class="muted">${r.exercises.length} ejercicios · ${r.level}</div>
+                  <div class="muted">${r.exercises.length} ejercicios · ${r.description}</div>
                 </div>
                 <span class="chevron">›</span>
               </button>
@@ -1760,6 +1997,13 @@ const App = {
             <input type="number" id="set-rest" class="input" value="${s.restSeconds}" min="10" max="300">
             <button class="btn btn-sm btn-primary mt" onclick="App.saveRest()">Guardar</button>
           </div>
+        </div>
+
+        <div class="section">
+          <h3>Actualizaciones</h3>
+          <p class="muted small mb">Versión instalada: v${(typeof CALREG_VERSION!=='undefined' && CALREG_VERSION.version) || '1.0.0'}</p>
+          <button class="btn btn-outline btn-full" onclick="App.checkAppVersion()">Comprobar versión</button>
+          <p class="muted small mt">Usa datos móviles o Wi-Fi. Solo muestra los cambios de la última versión disponible.</p>
         </div>
 
         <div class="section about">
