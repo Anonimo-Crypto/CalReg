@@ -1,10 +1,11 @@
 // CalReg Service Worker — offline-first agresivo
 // Desarrollado por Oscar Antonio Alvarez Collado
-const CACHE = 'calreg-v7';
+const CACHE = 'calreg-v9';
 const ASSETS = [
   './',
   './index.html',
   './css/styles.css',
+  './js/version.js',
   './js/data.js',
   './js/storage.js',
   './js/app.js',
