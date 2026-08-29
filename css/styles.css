@@ -933,7 +933,7 @@ html, body {
   position: fixed;
   inset: 0;
   background: rgba(0,0,0,.55);
-  z-index: 10000;
+  z-index: 90;
   display: flex;
   align-items: flex-end;
   justify-content: center;
@@ -1124,4 +1124,165 @@ html, body {
   font-variant-numeric: tabular-nums;
   font-weight: 700;
   color: var(--accent);
+}
+
+/* ===== Primera descarga ===== */
+.dl-screen {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px 16px 32px;
+  background: var(--bg, #0b1120);
+}
+.dl-card {
+  width: min(100%, 420px);
+  background: var(--bg-card, #111827);
+  border: 1px solid var(--border, #1e293b);
+  border-radius: 22px;
+  padding: 28px 22px 22px;
+  box-shadow: 0 18px 50px rgba(0,0,0,.35);
+}
+.dl-badge {
+  display: inline-block;
+  margin: 0 auto 14px;
+  padding: 5px 12px;
+  border: 1px solid color-mix(in srgb, var(--accent, #f97316) 55%, #64748b);
+  color: var(--accent, #f97316);
+  border-radius: 8px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-align: center;
+  width: fit-content;
+}
+.dl-card h1 {
+  text-align: center;
+  font-size: 1.45rem;
+  margin: 0 0 12px;
+}
+.dl-copy {
+  color: var(--text-muted, #94a3b8);
+  line-height: 1.5;
+  text-align: center;
+  font-size: 0.95rem;
+}
+.dl-size {
+  text-align: center;
+  color: var(--text-muted, #94a3b8);
+  margin: 14px 0 16px;
+  font-size: 0.88rem;
+}
+.dl-credits {
+  background: var(--bg-elevated, #0f172a);
+  border: 1px solid var(--border, #1e293b);
+  border-radius: 14px;
+  padding: 14px 16px;
+  margin-bottom: 18px;
+  color: var(--text-muted, #94a3b8);
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+.dl-credits p { margin: 0 0 4px; }
+.dl-cta { border-radius: 14px; }
+
+.dl-bar-wrap {
+  position: relative;
+  margin: 8px 0 10px;
+}
+.dl-speed-chip {
+  position: absolute;
+  top: -12px;
+  right: 8px;
+  z-index: 2;
+  background: var(--bg-elevated, #0f172a);
+  border: 1px solid var(--accent, #f97316);
+  color: var(--text, #fff);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  padding: 4px 8px;
+  border-radius: 8px;
+  box-shadow: 0 4px 14px rgba(0,0,0,.25);
+}
+.dl-bar-track {
+  height: 12px;
+  background: var(--bg-elevated, #0f172a);
+  border: 1px solid var(--border, #1e293b);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.dl-bar-fill {
+  height: 100%;
+  width: 0;
+  background: var(--accent, #f97316);
+  border-radius: 999px;
+  transition: width .25s ease;
+}
+.dl-bar-pct {
+  margin-top: 6px;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-weight: 650;
+}
+.dl-files {
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 42vh;
+  overflow: auto;
+}
+.dl-file {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 10px;
+  background: var(--bg-elevated, #0f172a);
+  border-radius: 10px;
+  border: 1px solid var(--border, #1e293b);
+}
+.dl-file-name {
+  font-size: 0.86rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.dl-ring {
+  width: 28px;
+  height: 28px;
+  flex: 0 0 28px;
+}
+.dl-ring svg { width: 28px; height: 28px; display: block; }
+.dl-ring-bg {
+  fill: none;
+  stroke: var(--border, #334155);
+  stroke-width: 3;
+}
+.dl-ring-fg {
+  fill: none;
+  stroke: var(--accent, #f97316);
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-dasharray: 87.96;
+  stroke-dashoffset: 87.96;
+  transform-origin: 18px 18px;
+  transform: rotate(-90deg);
+}
+.dl-ring.wait .dl-ring-fg {
+  stroke-dasharray: 18 70;
+  stroke-dashoffset: 0;
+  animation: dl-spin 0.9s linear infinite;
+}
+.dl-ring.active .dl-ring-fg {
+  animation: none;
+}
+.dl-ring.done .dl-ring-fg {
+  stroke-dashoffset: 0;
+  animation: none;
+}
+@keyframes dl-spin {
+  to { transform: rotate(270deg); }
 }
